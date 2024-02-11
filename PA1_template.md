@@ -22,7 +22,8 @@ interval: Identifier for the 5-minute interval in which measurement was taken </
 The dataset is stored in a comma-separated-value (CSV) file and there are a total of 17,568 observations in this dataset. 
 
 ## Loading and preprocessing the data
-```{r}
+
+```r
 file.url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
 file.path <- "./activity.zip"
 
@@ -40,49 +41,100 @@ df$date <- as.Date( df$date )
 summary( df )
 ```
 
+```
+##      steps             date               interval     
+##  Min.   :  0.00   Min.   :2012-10-01   Min.   :   0.0  
+##  1st Qu.:  0.00   1st Qu.:2012-10-16   1st Qu.: 588.8  
+##  Median :  0.00   Median :2012-10-31   Median :1177.5  
+##  Mean   : 37.38   Mean   :2012-10-31   Mean   :1177.5  
+##  3rd Qu.: 12.00   3rd Qu.:2012-11-15   3rd Qu.:1766.2  
+##  Max.   :806.00   Max.   :2012-11-30   Max.   :2355.0  
+##  NA's   :2304
+```
+
 ## What is mean total number of steps taken per day?
 To determine this, aggregate all intervals by date and sum the steps and plot. 
-```{r}
+
+```r
 totalStepsByDate <- aggregate( steps ~ date, df, sum )
 
 head( totalStepsByDate )
+```
 
+```
+##         date steps
+## 1 2012-10-02   126
+## 2 2012-10-03 11352
+## 3 2012-10-04 12116
+## 4 2012-10-05 13294
+## 5 2012-10-06 15420
+## 6 2012-10-07 11015
+```
+
+```r
 hist( totalStepsByDate$steps, main = paste( "Total steps each day" ), col="yellow", xlab = "Number of Steps" )
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
+
 Also, check the daily mean and median steps across all dates.
-```{r}
+
+```r
 dailyMean <- mean( totalStepsByDate$steps )
 print( paste( "Daily Mean : ", dailyMean ))
+```
 
+```
+## [1] "Daily Mean :  10766.1886792453"
+```
+
+```r
 dailyMedian <- median( totalStepsByDate$steps )
 print( paste( "Daily Median : ", dailyMedian ))
+```
+
+```
+## [1] "Daily Median :  10765"
 ```
 
 
 ## What is the average daily activity pattern?
 To determine this, aggregate the measurements by interval and average the steps; then plot.
-```{r}
+
+```r
 stepsByInterval <- aggregate( steps ~ interval, df, mean )
 plot( stepsByInterval$interval, stepsByInterval$steps, type = "l", xlab = "Daily interval", 
       ylab = "Steps", main = "Average steps per day per interval" )
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
+
 Which 5-min interval contains the maximum number of steps
-```{r}
+
+```r
 max_interval <- stepsByInterval[ which.max( stepsByInterval$steps ), 1 ]
 print( paste( "Max interval : ", max_interval ))
 ```
 
+```
+## [1] "Max interval :  835"
+```
+
 ## Imputing missing values
 To determine the count of missing values, sum the number of records where NOT complete cases
-```{r}
+
+```r
 naCount <- sum( !complete.cases( df ))
 print( paste( "Total missing values : ", naCount ))
 ```
 
+```
+## [1] "Total missing values :  2304"
+```
+
 To impute missing measurements, set a missing day-interval’s value to the average for that same interval across all days. For the first day, which was all NA’s, set all to zero (rather than the method above for each day-1 interval).
-```{r}
+
+```r
 imputedData <- transform( df, 
                           steps = ifelse( is.na( df$steps ), 
                                           stepsByInterval$steps[ match( df$interval, stepsByInterval$interval)],                                               df$steps ))
@@ -90,7 +142,8 @@ imputedData[ as.character( imputedData$date ) == "2012-10-01", 1 ] <- 0
 ```
 
 Create a new plot
-```{r}
+
+```r
 imputedStepsByDate <- aggregate( steps ~ date, imputedData, sum )
 hist( imputedStepsByDate$steps, main = paste( "Total steps each day"), col = "green", xlab = "Number of steps" )
 hist( totalStepsByDate$steps, main = paste( "Total steps each day"), col = "yellow", xlab = "Number of Steps", 
@@ -98,19 +151,33 @@ hist( totalStepsByDate$steps, main = paste( "Total steps each day"), col = "yell
 legend( "topright", c( "Imputed", "Original" ), col = c( "green", "yellow" ), lwd = 8 )
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
+
 Also, check the daily mean and median steps across all dates.
-```{r}
+
+```r
 imputedDailyMean <- mean( imputedStepsByDate$steps )
 print( paste( "Daily Mean : ", imputedDailyMean ))
+```
 
+```
+## [1] "Daily Mean :  10589.6937828642"
+```
+
+```r
 ImputedDailyMedian <- median( imputedStepsByDate$steps )
 print( paste( "Daily Median : ", ImputedDailyMedian ))
+```
+
+```
+## [1] "Daily Median :  10766.1886792453"
 ```
 
 ## Are there differences in activity patterns between weekdays and weekends?
 To determine this, add a factor to each date’s record reflecting whether that day of the week is a weekday or weekend. Plot the resulting split aggregates in a 2-up conditioning plot.
 ( note : test on weekdays is in Dutch, as myLocal is Dutch )
-```{r}
+
+```r
 library( lattice )
 
 imputedData$dayFactor <- as.factor( ifelse( weekdays( imputedData$date ) == "zaterdag" | 
@@ -121,3 +188,5 @@ aggregateImputedData <- aggregate( steps ~ interval + dayFactor, imputedData, me
 xyplot( steps ~ interval | dayFactor, data = aggregateImputedData, 
         main = "Interval Averages, Weekday v. Weekend", xlab = "Interval", layout = c( 1, 2 ), type = "l" )
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
